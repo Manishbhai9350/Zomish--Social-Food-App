@@ -5,12 +5,10 @@ const Model = Schema({
     name:{
         type:String,
         required:true,
-        unique:true
     },
     description:{
         type:String,
         required:true,
-        unique:true
     },
     video:{
         type:String,

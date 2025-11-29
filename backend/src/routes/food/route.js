@@ -8,6 +8,7 @@ const FoodRouter =  Router()
 
 
 FoodRouter.post('/food/create',AuthenticateFoodPartner,MulterStorage.single('video'),FoodController.food.create)
+// FoodRouter.get('/food')
 
 
 export { FoodRouter }
