@@ -5,120 +5,50 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import ReelViewer from "../../components/ReelViewer";
 import "../../App.css";
+import { Axioss } from "../../utils/axios";
 
 const THRESHOLD = 5;
 const WINDOW = Math.max(2, THRESHOLD * 2);
 
-// Use provided backend-style data as the initial feed (mapped to frontend shape)
-const backendSample = {
-  success: true,
-  direction: "initial",
-  reels: [
-    { _id: "692db6642a55f66a4149ab24", title: "Paneer Butter", description: "A restaurant-style favorite, paneer butter masala features tender paneer chunks soaked in a silky tomato-cashew gravy with irresistible buttery richness. This mildly spiced and slightly sweet dish is known for its luxurious texture and vibrant red color.", video: "https://ik.imagekit.io/owby5ky2m/butter-paneer_pYC2KfKlLR.mp4", partner: "692db05660d3cae3d3516161", __v: 0 },
-    { _id: "692db6402a55f66a4149ab1f", title: "Paneer Dal", description: "Paneer dal combines the protein punch of lentils with soft paneer cubes to create a nourishing and flavorful dish. Slow-cooked yellow dal provides a smooth and velvety texture, while paneer adds richness and heartiness to every spoonful.", video: "https://ik.imagekit.io/owby5ky2m/paneer-daal_IVdIjeUgR.mp4", partner: "692db05660d3cae3d3516161", __v: 0 },
-    { _id: "692db6242a55f66a4149ab1c", title: "Paneer Curry", description: "This rich and flavorful paneer curry brings together soft, melt-in-your-mouth paneer cubes simmered in a tomato-onion base infused with traditional Indian spices. The delicious gravy balances warmth and tanginess with subtle creaminess, making every bite deeply satisfying. Fresh ginger, garlic, and garam masala elevate the aroma, while a touch of kasuri methi adds a comforting, homestyle finish. Best enjoyed with hot roti, naan, or steamed rice for a wholesome and soulful meal.", video: "https://ik.imagekit.io/owby5ky2m/paneer-curry_INNXcZ1Fl.mp4", partner: "692db05660d3cae3d3516161", __v: 0 },
-    { _id: "692db5ce2a55f66a4149ab19", title: "Marathi Daal Curry", description: "Marathi Daal Curry made with pure ingredients. Made in home taste. Better Spice. Filled with paneer and butter. Excellent in taste.", video: "https://ik.imagekit.io/owby5ky2m/daal-curry_uMltLZ_wE.mp4", partner: "692db05660d3cae3d3516161", __v: 0 },
-    { _id: "692db56d2a55f66a4149ab16", title: "Indian Veg Curry", description: "Indian Vegitarian Curry made with pure water and masalla. Full of Indian handmade food taste and value for money. Good for health 😋", video: "https://ik.imagekit.io/owby5ky2m/veg-curry_2bvaRYSGFl.mp4", partner: "692db05660d3cae3d3516161", __v: 0 }
-  ],
-  hasMore: true,
+
+
+const fetchNextReels = async (currentId = '', threshold = 1) => {
+  try {
+    const res = await Axioss.get("/api/food/reels", {
+      params: {
+        threshold: threshold,
+        direction: "next",
+        current: currentId,
+      },
+      withCredentials: true
+    });
+
+    return res.data.reels || [];
+  } catch (error) {
+    console.error("Error fetching next reels:", error);
+    return [];
+  }
 };
 
-const dummyReels = backendSample.reels.map((r) => ({
-  id: r._id,
-  title: r.title,
-  description: r.description,
-  url: r.video,
-  partner: r.partner,
-  restaurant: r.restaurant || "",
-  rating: r.rating || 4.5,
-  prepTime: r.prepTime || "20 min",
-}));
+const fetchPreviousReels = async (currentId = "", threshold = 1) => {
+  try {
+    const res = await Axioss.get("/api/food/reels", {
+      params: {
+        threshold: threshold,
+        direction: "prev",
+        current: currentId,
+      },
+      withCredentials: true
+    });
 
-// Dummy directional fetch functions that simulate server behavior.
-// They mimic the server-side pattern you suggested: fetch previous (older) documents
-// by using the current id and returning items with smaller ids, and fetch next
-// (newer) items by returning larger ids.
-// Return sample MP4s for next reels. Avoid image URLs in video src.
-const SAMPLE_VIDEOS = [
-  // reuse backend sample links where available, otherwise fall back to a public MP4
-  "https://ik.imagekit.io/owby5ky2m/butter-paneer_pYC2KfKlLR.mp4",
-  "https://ik.imagekit.io/owby5ky2m/paneer-daal_IVdIjeUgR.mp4",
-  "https://ik.imagekit.io/owby5ky2m/paneer-curry_INNXcZ1Fl.mp4",
-  "https://ik.imagekit.io/owby5ky2m/daal-curry_uMltLZ_wE.mp4",
-  "https://ik.imagekit.io/owby5ky2m/veg-curry_2bvaRYSGFl.mp4",
-  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-];
-
-const fetchNextReels = async (offset = 0, limit = THRESHOLD) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const start = 6 + offset;
-      const newReels = Array.from({ length: limit }, (_, i) => {
-        const id = start + i;
-        return {
-          id,
-          title: `Delish #${id}`,
-          cuisine: "Mixed",
-          // pick a sample MP4 (rotate)
-          url: SAMPLE_VIDEOS[(i + offset) % SAMPLE_VIDEOS.length],
-          restaurant: ["Street Eats", "Food Hub", "Crave Corner", "Heat Kitchen", "Farm Fresh"][i % 5],
-          rating: (4.4 + Math.random() * 0.5).toFixed(1),
-          prepTime: `${(15 + Math.random() * 20) | 0} min`,
-        };
-      });
-      resolve(newReels);
-    }, 600);
-  });
-};
-
-const fetchPreviousReels = async (currentId = 1, limit = THRESHOLD) => {
-  // If currentId is numeric, simulate older numeric ids. If it's a string
-  // (e.g. backend _id), don't attempt numeric arithmetic — instead generate
-  // synthetic items with unique string ids and MP4 urls so the video element
-  // doesn't receive an image URL.
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const items = [];
-
-      const numeric = Number.isFinite(Number(currentId));
-      if (numeric) {
-        for (let i = 0; i < limit; i++) {
-          const id = Number(currentId) - 1 - i;
-          if (id <= 0) break;
-          items.push({
-            id,
-            title: `Older #${id}`,
-            cuisine: "Mixed",
-            url: SAMPLE_VIDEOS[(i + Number(currentId)) % SAMPLE_VIDEOS.length],
-            restaurant: ["Old Eats", "Vintage Deli", "Classic Corner"][i % 3],
-            rating: (4.0 + Math.random() * 0.8).toFixed(1),
-            prepTime: `${(15 + Math.random() * 20) | 0} min`,
-          });
-        }
-        // items are newest-first (id decreasing), reverse so we prepend older->newer
-        resolve(items.reverse());
-      } else {
-        // currentId is not numeric (likely a string _id) — generate string ids
-        for (let i = 0; i < limit; i++) {
-          const syntheticId = `prev-${Date.now()}-${i}`;
-          items.push({
-            id: syntheticId,
-            title: `Older ${i + 1}`,
-            cuisine: "Mixed",
-            url: SAMPLE_VIDEOS[(i + 3) % SAMPLE_VIDEOS.length],
-            restaurant: ["Old Eats", "Vintage Deli", "Classic Corner"][i % 3],
-            rating: (4.0 + Math.random() * 0.8).toFixed(1),
-            prepTime: `${(15 + Math.random() * 20) | 0} min`,
-          });
-        }
-        // Already in older->newer ordering
-        resolve(items);
-      }
-    }, 600);
-  });
+    return res.data.reels || [];
+  } catch (error) {
+    console.error("Error fetching previous reels:", error);
+    return [];
+  }
 };
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -127,11 +57,15 @@ const Home = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialIndex = parseInt(searchParams.get("reel")) || 0;
 
-  const [reels, setReels] = useState(dummyReels);
+  const [reels, setReels] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(
-    clamp(initialIndex, 0, dummyReels.length - 1)
+    clamp(initialIndex, 0, reels.length - 1)
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasMoreNext, setHasMoreNext] = useState(true);
+  const [hasMorePrev, setHasMorePrev] = useState(false);
+
+  const navigate = useNavigate()
 
   // sensor/lock refs
   const lockRef = useRef(false);
@@ -140,8 +74,57 @@ const Home = () => {
   const containerRef = useRef(null);
   const lastFetchRef = useRef(0);
   const currentIndexRef = useRef(initialIndex);
-  const reelsRef = useRef(dummyReels);
-  const initialPrefetchRef = useRef(false);
+  const reelsRef = useRef(reels);
+  const isFetchingRef = useRef(false);
+  const lastPrefetchIdRef = useRef(null); // Track last prefetch ID to prevent duplicates
+
+  useEffect(() => {
+    const GetReels = async () => {
+      let Reels = []
+      try {
+        const reels = await Axioss.get('/api/food/reels', {
+          withCredentials: true
+        })
+
+        if(reels.data.authorize === false) {
+          navigate('/auth/user/login')
+          return []
+        }
+
+        Reels = reels.data.reels || []
+        console.log('Initial reels fetched:', Reels)
+
+      } catch (error) {
+        console.error('Error While Fetching Initial Reels:', error)
+      }
+
+      return Reels
+    }
+
+    GetReels().then((Reels) => {
+      // Map backend reel shape to frontend shape
+      const mappedReels = Reels.map((reel) => ({
+        id: reel._id,
+        title: reel.title,
+        description: reel.description,
+        url: reel.video,
+        partner: reel.partner,
+        cuisine: "Mixed",
+        restaurant: "",
+        rating: 4.5,
+        prepTime: "20 min",
+      }));
+      setReels(mappedReels)
+      // Check if there are more reels to fetch based on count
+      // Only set hasMoreNext to true if we got EXACTLY 5 reels (threshold)
+      // If we got less or more, it's the final batch or we have them all
+      setHasMoreNext(mappedReels.length === 5);
+      setHasMorePrev(false); // No previous reels on initial load
+      setLoading(false)
+    })
+  
+  }, [navigate])
+  
 
   // keep refs in sync
   useEffect(() => {
@@ -173,54 +156,159 @@ const Home = () => {
 
   // load more reels with debounce and direction support
   // direction: 'next' (append newer) or 'prev' (prepend older)
+  // refId: optional reference ID for smart prefetch
+  // threshold: optional threshold (default 5 for manual scroll, 1 for smart prefetch)
   const loadMoreReels = useCallback(
-    async (direction = "next") => {
+    async (direction = "next", refId = null, threshold = 5) => {
       const now = Date.now();
-      if (loading || now - lastFetchRef.current < 800) return;
+      // Prevent multiple simultaneous fetches
+      if (loading || isFetchingRef.current || now - lastFetchRef.current < 400) return;
 
-      // Decide whether fetching is necessary depending on direction
-      if (direction === "next") {
-        const shouldFetch = reelsRef.current.length - currentIndexRef.current <= THRESHOLD + 2;
-        if (!shouldFetch) return;
-      } else {
-        // prev: fetch when currentIndex is small (close to start)
-        const shouldFetch = currentIndexRef.current <= THRESHOLD + 1;
-        if (!shouldFetch) return;
+      // For manual scroll-triggered fetches (when refId is null), check boundaries
+      if (refId === null) {
+        if (direction === "next") {
+          // Don't fetch if no more reels available or already at end
+          if (!hasMoreNext) return;
+          const shouldFetch =
+            reelsRef.current.length - currentIndexRef.current <= THRESHOLD + 2;
+          if (!shouldFetch) return;
+        } else {
+          // Don't fetch if no more reels available in prev direction
+          if (!hasMorePrev) return;
+          // prev: fetch when currentIndex is small (close to start)
+          const shouldFetch = currentIndexRef.current <= THRESHOLD + 1;
+          if (!shouldFetch) return;
+        }
       }
 
       lastFetchRef.current = now;
+      isFetchingRef.current = true;
       setLoading(true);
       try {
         if (direction === "next") {
-          const more = await fetchNextReels(reelsRef.current.length, THRESHOLD);
-          setReels((prev) => [...prev, ...more]);
+          const currentId = refId || (reelsRef.current[reelsRef.current.length - 1]?.id || '');
+          console.log(`Fetching next reels with threshold ${threshold}, currentId: ${currentId}`)
+          
+          const more = await fetchNextReels(currentId, threshold);
+          if (more.length > 0) {
+            setReels((prev) => [
+              ...prev,
+              ...more.map((reel) => ({
+                id: reel._id,
+                title: reel.title,
+                description: reel.description,
+                url: reel.video,
+                partner: reel.partner,
+                cuisine: "Mixed",
+                restaurant: "",
+                rating: 4.5,
+                prepTime: "20 min",
+              }))
+            ]);
+            // Only set hasMoreNext to true if we got exactly threshold reels
+            // If we got less, it means we got the last batch
+            const hasMore = more.length === threshold;
+            setHasMoreNext(hasMore);
+          } else {
+            // No more reels available
+            setHasMoreNext(false);
+          }
         } else {
           // fetch older items before the first currently loaded item
-          const first = reelsRef.current[0];
-          const beforeId = first ? first.id : 1;
-          const prevItems = await fetchPreviousReels(beforeId, THRESHOLD);
-          if (prevItems.length === 0) return;
+          const currentId = refId || (reelsRef.current[0]?.id || '');
+          console.log(`Fetching previous reels with threshold ${threshold}, currentId: ${currentId}`)
+          const prevItems = await fetchPreviousReels(currentId, threshold);
+          if (prevItems.length === 0) {
+            setHasMorePrev(false);
+            return;
+          }
           // Prepend and shift currentIndex forward by number prepended to keep same visible
-          setReels((prev) => [...prevItems, ...prev]);
+          setReels((prev) => [
+            ...prevItems.map((reel) => ({
+              id: reel._id,
+              title: reel.title,
+              description: reel.description,
+              url: reel.video,
+              partner: reel.partner,
+              cuisine: "Mixed",
+              restaurant: "",
+              rating: 4.5,
+              prepTime: "20 min",
+            })),
+            ...prev
+          ]);
+          // Only set hasMorePrev to true if we got exactly threshold reels
+          const hasMore = prevItems.length === threshold;
+          setHasMorePrev(hasMore);
           setCurrentIndex((idx) => idx + prevItems.length);
         }
       } catch (err) {
         console.error("Failed to fetch reels:", err);
       } finally {
         setLoading(false);
+        isFetchingRef.current = false;
       }
     },
-    [loading]
+    [loading, hasMoreNext, hasMorePrev]
   );
 
-  // prefetch on initial load if needed — run once safely (deps included)
-  useEffect(() => {
-    if (initialPrefetchRef.current) return;
-    initialPrefetchRef.current = true;
-    if (currentIndex > reels.length - THRESHOLD - 2) {
-      loadMoreReels("next");
+  // Smart bidirectional prefetch
+  const smartPrefetch = useCallback(() => {
+    if (loading || isFetchingRef.current) return;
+    
+    const currentIdx = currentIndexRef.current;
+    const totalReels = reelsRef.current.length;
+    
+    // Case 1: If viewing second-to-last reel, fetch next using last reel's ID
+    if (currentIdx === totalReels - 2 && totalReels > 1) {
+      const lastReel = reelsRef.current[totalReels - 1];
+      if (lastReel && hasMoreNext) {
+        // Prevent duplicate prefetch requests for the same ID
+        if (lastPrefetchIdRef.current === `secondlast-${lastReel.id}`) {
+          return;
+        }
+        lastPrefetchIdRef.current = `secondlast-${lastReel.id}`;
+        loadMoreReels("next", lastReel.id, 1);
+      }
+      return; // Exit early, don't check other cases
     }
-  }, [currentIndex, reels.length, loadMoreReels]);
+    
+    // Case 2: Always try to prefetch reel at currentIdx + 4
+    const prefetchTargetIndex = currentIdx + 4;
+    
+    // If target reel doesn't exist, we need to fetch it
+    if (prefetchTargetIndex >= totalReels) {
+      // Fetch NEXT: use reel at totalReels - 1 (last reel) as reference
+      const lastReel = reelsRef.current[totalReels - 1];
+      if (lastReel && hasMoreNext) {
+        // Prevent duplicate prefetch requests for the same ID
+        if (lastPrefetchIdRef.current === `ahead-${lastReel.id}`) {
+          return;
+        }
+        lastPrefetchIdRef.current = `ahead-${lastReel.id}`;
+        loadMoreReels("next", lastReel.id, 1);
+      }
+      return; // Exit early
+    }
+    
+    // Case 3: Fetch PREV when viewing reel 0 (beginning)
+    if (currentIdx === 0 && hasMorePrev) {
+      const firstReel = reelsRef.current[0];
+      if (firstReel) {
+        // Prevent duplicate prefetch requests for the same ID
+        if (lastPrefetchIdRef.current === `prev-${firstReel.id}`) {
+          return;
+        }
+        lastPrefetchIdRef.current = `prev-${firstReel.id}`;
+        loadMoreReels("prev", firstReel.id, 1);
+      }
+    }
+  }, [loading, hasMoreNext, hasMorePrev, loadMoreReels]);
+
+  // Trigger smart prefetch when current index changes
+  useEffect(() => {
+    smartPrefetch();
+  }, [currentIndex, smartPrefetch]);
 
   // navigation with lock & prefetch (stable)
   const PAGE_DURATION = 520;
@@ -232,21 +320,14 @@ const Home = () => {
 
       lockRef.current = true;
       setCurrentIndex(next);
-
-      // prefetch near end
-      if (reelsRef.current.length - next <= THRESHOLD + 2) {
-        loadMoreReels("next");
-      }
-      // prefetch older when approaching start
-      if (next <= THRESHOLD + 1) {
-        loadMoreReels("prev");
-      }
+      // Smart prefetch will handle fetching based on currentIndex change
+      // No need to manually call loadMoreReels here anymore
 
       setTimeout(() => {
         lockRef.current = false;
       }, PAGE_DURATION);
     },
-    [loadMoreReels]
+    []
   );
 
   // wheel sensor (use gotoIndex from callback)
@@ -343,8 +424,10 @@ const Home = () => {
   }, [gotoIndex]);
 
   // Handle reel scroll callback
-  const handleReelScroll = useCallback((isActive, reelId) => {
-    console.log(`Reel ${reelId} is ${isActive ? 'active' : 'inactive'}`);
+  const handleReelScroll = useCallback((isActive) => {
+    if (isActive) {
+      console.log(`Currently viewing: Reel ${currentIndexRef.current + 1}`);
+    }
   }, []);
 
   return (
@@ -374,8 +457,8 @@ const Home = () => {
               data-global-index={item.globalIndex}
             >
               <div style={{ width: "min(480px, 100%)", height: "100%" }}>
-                <ReelViewer 
-                  reel={item} 
+                <ReelViewer
+                  reel={item}
                   isActive={item.globalIndex === currentIndex}
                   onReelScroll={handleReelScroll}
                 />

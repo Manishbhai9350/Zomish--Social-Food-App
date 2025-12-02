@@ -1,71 +1,73 @@
-import { FoodPartnerModel } from "../../model/food-partner/model.js"
-import { UserModel } from "../../model/user/model.js"
-import { Decode } from "../../utils/jwt.js"
+import { FoodPartnerModel } from "../../model/food-partner/model.js";
+import { UserModel } from "../../model/user/model.js";
+import { Decode } from "../../utils/jwt.js";
 
-const AuthenticateFoodPartner = async (req,res,next) => {
+const AuthenticateFoodPartner = async (req, res, next) => {
   try {
+    const token = req.cookies["token"];
 
-    const token = req.cookies['token']
+    const decoded = Decode(token);
 
-    const decoded = Decode(token) 
-
-    const foodpartner = await FoodPartnerModel.findById(decoded.id)
-
-    if(!foodpartner) {
+    if (!decoded) {
       return res.status(400).json({
-        message:'Please Login First',
-        success:false
-      })
+        success: false,
+        message: "Please Login First",
+        authorize: true,
+      });
+    }
+
+    const foodpartner = await FoodPartnerModel.findById(decoded.id);
+
+    if (!foodpartner) {
+      return res.status(400).json({
+        success: false,
+        message: "Please Login First",
+        authorize: true,
+      });
     }
 
     req.foodpartner = foodpartner;
 
-    next()
-
+    next();
   } catch (error) {
-    if(error) {
+    console.log(error);
+    if (error) {
       return res.status(400).json({
-        message:'Please Login First',
-        success:false
-      })
+        success: false,
+        message: "Please Login First",
+        authorize: true,
+      });
     }
   }
-}
+};
 
-const AuthenticateUser = async (req,res,next) => {
+const AuthenticateUser = async (req, res, next) => {
   try {
+    const token = req.cookies["token"];
 
-    const token = req.cookies['token']
+    const decoded = Decode(token);
 
-    const decoded = Decode(token) 
+    const user = await UserModel.findById(decoded.id);
 
-    const foodpartner = await UserModel.findById(decoded.id)
 
-    if(!foodpartner) {
+    if (!user) {
       return res.status(400).json({
-        message:'Please Login First',
-        success:false
-      })
+        message: "Please Login First",
+        success: false,
+      });
     }
 
-    req.foodpartner = foodpartner;
+    req.user = user;
 
-    next()
-
+    next();
   } catch (error) {
-    if(error) {
+    if (error) {
       return res.status(400).json({
-        message:'Please Login First',
-        success:false
-      })
+        message: "Please Login First",
+        success: false,
+      });
     }
   }
-}
+};
 
-
-
-
-export {
-    AuthenticateFoodPartner,
-    AuthenticateUser
-}
+export { AuthenticateFoodPartner, AuthenticateUser };

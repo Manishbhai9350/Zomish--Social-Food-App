@@ -7,5 +7,5 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Toaster position="top-center" />
     <App />
-  </StrictMode>,
+  </StrictMode>
 )

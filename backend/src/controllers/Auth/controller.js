@@ -6,9 +6,9 @@ import { IsEmail } from "../../utils/validator.js";
 
 const Register = async (req, res) => {
   try {
+
     const { fullname, email, password } = req.body;
 
-    console.log(req.body)
 
     if (!fullname || !email || !password || !IsEmail(email)) {
       return res.status(400).json({

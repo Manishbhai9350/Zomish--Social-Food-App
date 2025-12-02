@@ -9,7 +9,7 @@ const FoodRouter =  Router()
 
 FoodRouter.post('/food/create',AuthenticateFoodPartner,MulterStorage.single('video'),FoodController.food.create)
 FoodRouter.patch('/food/like',AuthenticateUser,FoodController.food.like)
-FoodRouter.get('/food/reels',AuthenticateFoodPartner,FoodController.food.getAll)
+FoodRouter.get('/food/reels',AuthenticateUser,FoodController.food.getAll)
 
 
 
