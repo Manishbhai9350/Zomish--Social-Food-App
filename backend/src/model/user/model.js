@@ -15,7 +15,11 @@ const Model = Schema({
     password:{
         type:String,
         required:true
-    }
+    },
+    saved:[{
+        type:Schema.Types.ObjectId,
+        ref:'foods'
+    }]
 })
 
 

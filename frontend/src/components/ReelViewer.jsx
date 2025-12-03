@@ -1,19 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineHeart, AiFillHeart, AiFillSave, AiOutlineSave } from "react-icons/ai";
 import { BiMessageRounded } from "react-icons/bi";
 import { RiShareForwardLine } from "react-icons/ri";
-import { BsArrowUpRight, BsCart3 } from "react-icons/bs";
+import { BsArrowUpRight, BsCart3, BsFillSaveFill, BsSave } from "react-icons/bs";
 import { MdDeliveryDining } from "react-icons/md";
 import "../App.css";
 import { Link } from "react-router-dom";
 import { Axioss } from "../utils/axios";
+import gsap from "gsap";
 
 const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
   const [likes, setLikes] = useState(reel._raw.like);
   const [isLiked, setIsLiked] = useState(reel._raw.hasLiked || false);
+  const [isSaved, setIsSaved] = useState(reel._raw.hasSaved || false);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false)
   const videoRef = useRef(null);
+  const progressRef = useRef(null)
 
   // Handle video play/pause based on active state
   useEffect(() => {
@@ -60,6 +63,31 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
     }
   }, [isActive]);
 
+  useEffect(() => {
+    
+    videoRef.current.ontimeupdate = (e) => {
+      if(progressRef.current) {
+        let scaleX = e.currentTarget.currentTime/e.currentTarget.duration
+
+        if(scaleX >= .95) {
+          scaleX = 0
+          gsap.set(progressRef.current,{
+            scaleX:0
+          })
+        } else {
+          gsap.to(progressRef.current,{
+            scaleX
+          })
+        }
+      }
+    }
+  
+    return () => {
+      
+    }
+  }, [])
+  
+
 
   const handleLike = async () => {
     try {
@@ -72,6 +100,26 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
       })
       setLikes(prev => res.data.liked ? prev + 1 : prev - 1)
       setIsLiked(res.data.liked)
+    } catch (error) {
+      
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      if(loading) return;
+      setLoading(true)
+      const res = await Axioss.patch('/api/food/save',{
+        reel:reel.id,
+      },{
+        withCredentials:true
+      })
+
+      console.log(res)
+      
+      setIsSaved(res.data.saved)
     } catch (error) {
       
     } finally {
@@ -124,9 +172,10 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
               display: "flex",
               paddingRight: 5,
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: "flex-end",
               minHeight: 100,
               width: "100%",
+              marginBottom:20
             }}
             className="info-header"
           >
@@ -152,7 +201,7 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
                 </div>
               </Link>
             </div>
-            <div className="content-like">
+            <div  className="content-buttons">
               <button
                 className={`reel-like-btn ${isLiked ? "liked" : ""}`}
                 onClick={handleLike}
@@ -168,6 +217,19 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
                 <span className="like-count">
                   {likes > 999 ? `${(likes / 1000).toFixed(1)}k` : likes}
                 </span>
+              </button>
+              <button
+                className={`reel-save-btn ${isSaved ? "saved" : ""}`}
+                onClick={handleSave}
+                title="Like"
+              >
+                <div className="reel-like-icon">
+                  {isSaved ? (
+                    <BsFillSaveFill size={28} />
+                  ) : (
+                    <BsSave size={28} />
+                  )}
+                </div>
               </button>
             </div>
           </div>
@@ -214,6 +276,11 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
           </div>
         </div>
       </div>
+
+      <div className="progress">
+        <div ref={progressRef} className="line"></div>
+      </div>
+      
     </div>
   );
 };

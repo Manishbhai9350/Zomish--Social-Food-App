@@ -8,8 +8,9 @@ const FoodRouter =  Router()
 
 
 FoodRouter.post('/food/create',AuthenticateFoodPartner,MulterStorage.single('video'),FoodController.food.create)
-FoodRouter.patch('/food/like',AuthenticateUser,FoodController.food.like)
 FoodRouter.post('/food/reels',AuthenticateUser,FoodController.food.getAll)
+FoodRouter.patch('/food/like',AuthenticateUser,FoodController.food.like)
+FoodRouter.patch('/food/save',AuthenticateUser,FoodController.food.save)
 
 
 

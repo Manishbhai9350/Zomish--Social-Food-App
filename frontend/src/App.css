@@ -306,6 +306,24 @@ button {
   flex-direction: column;
 }
 
+.reel-viewer .progress {
+  width: 100%;
+  height: 3px;
+  background: rgb(157, 157, 157);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+}
+
+.reel-viewer .progress .line {
+  width: 100%;
+  height: 100%;
+  background: white;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
 .reel-media {
   width: 100%;
   flex: 1;
@@ -365,6 +383,10 @@ button {
   line-height: 1.2;
 }
 
+.info-header {
+  align-items: flex-end;
+}
+
 .reel-info p {
   margin: 0;
   font-size: 13px;
@@ -379,6 +401,13 @@ button {
   letter-spacing: 0.3px;
 }
 
+.content-buttons {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .reel-like-btn {
   display: flex;
   flex-direction: column;
@@ -389,6 +418,20 @@ button {
   font-size: 1.2rem;
   background: transparent;
   border: none;
+  margin-block: 5px;
+}
+
+.reel-save-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: white;
+  font-size: 1.2rem;
+  background: transparent;
+  border: none;
+  margin-block: 5px;
 }
 
 .reel-like-icon {
@@ -412,6 +455,18 @@ button {
 }
 
 .reel-like-icon.liked {
+  background: rgba(255, 53, 107, 0.8);
+  border-color: rgba(255, 53, 107, 0.6);
+  animation: like-pulse 0.4s ease;
+}
+
+.reel-save-icon:hover {
+  background: rgba(53, 171, 255, 0.6);
+  border-color: rgba(53, 171, 255, 0.5);
+  transform: scale(1.12);
+}
+
+.reel-save-icon.liked {
   background: rgba(255, 53, 107, 0.8);
   border-color: rgba(255, 53, 107, 0.6);
   animation: like-pulse 0.4s ease;

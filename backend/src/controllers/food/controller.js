@@ -101,6 +101,69 @@ const likeFood = async (req, res) => {
   }
 };
 
+const saveFood = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    const reelId = req.body.reel;
+
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Token missing" });
+    }
+
+    const decoded = Decode(token);
+    if (!decoded.id) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User unauthorized" });
+    }
+
+    const user = await UserModel.findById(decoded.id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const foodReel = await FoodModel.findById(reelId);
+    if (!foodReel) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Food reel not found" });
+    }
+
+    // FIX 1: Correct way to check if saved
+    const alreadySaved = user.saved.some(
+      (id) => id.toString() === foodReel._id.toString()
+    );
+
+    // FIX 2: Toggle logic properly
+    if (alreadySaved) {
+      user.saved.pull(foodReel._id);
+      await user.save();
+      return res.json({
+        success: true,
+        message: "Unsaved successfully",
+        saved: false,
+      });
+    }
+
+    // FIX 3: Correct ID pushed (foodReel._id)
+    user.saved.push(foodReel._id);
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: "Saved successfully",
+      saved: true,
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 const GetReels = async (req, res) => {
   try {
     const user = req.user; // logged-in user
@@ -144,11 +207,14 @@ const GetReels = async (req, res) => {
       const hasLiked = userId
         ? reel.likes?.some((id) => id.toString() === userId.toString())
         : false;
+      
+      const hasSaved = user.saved.some(id => id.toString() === reel._id.toString())
 
       return {
         ...reel._doc,
         hasLiked,
-        like:reel.likes?.length || 0
+        hasSaved,
+        like:reel.likes?.length || 0,
       };
     });
 
@@ -171,5 +237,6 @@ export default {
     create: createFood,
     like: likeFood,
     getAll: GetReels,
+    save:saveFood
   },
 };
