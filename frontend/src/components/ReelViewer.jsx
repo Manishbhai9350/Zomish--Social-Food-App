@@ -6,11 +6,13 @@ import { BsArrowUpRight, BsCart3 } from "react-icons/bs";
 import { MdDeliveryDining } from "react-icons/md";
 import "../App.css";
 import { Link } from "react-router-dom";
+import { Axioss } from "../utils/axios";
 
 const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
-  const [likes, setLikes] = useState(() => Math.floor(Math.random() * 1000));
-  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState(reel._raw.like);
+  const [isLiked, setIsLiked] = useState(reel._raw.hasLiked || false);
   const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false)
   const videoRef = useRef(null);
 
   // Handle video play/pause based on active state
@@ -33,7 +35,6 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
 
       const tryPlay = async () => {
         try {
-          console.log(v)
           const p = v.play();
           if (p && p.catch) {
             await p;
@@ -59,6 +60,25 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
     }
   }, [isActive]);
 
+
+  const handleLike = async () => {
+    try {
+      if(loading) return;
+      setLoading(true)
+      const res = await Axioss.patch('/api/food/like',{
+        reel:reel.id,
+      },{
+        withCredentials:true
+      })
+      setLikes(prev => res.data.liked ? prev + 1 : prev - 1)
+      setIsLiked(res.data.liked)
+    } catch (error) {
+      
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Call onReelScroll prop when active state changes
   const stableReelId = reel?.id ?? String(reel?.title ?? "unknown");
   useEffect(() => {
@@ -67,10 +87,6 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
     }
   }, [isActive, stableReelId, onReelScroll]);
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikes(isLiked ? likes - 1 : likes + 1);
-  };
 
   // prefer backend description when available
   const fullDescription = reel?.description

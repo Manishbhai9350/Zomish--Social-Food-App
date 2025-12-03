@@ -103,16 +103,16 @@ const likeFood = async (req, res) => {
 
 const GetReels = async (req, res) => {
   try {
+    const user = req.user; // logged-in user
+    const userId = user?._id;
 
     const current = req.body?.current;
-    const direction = req.body?.direction
-    const threshold = req.body?.threshold || 5;
-
-    console.log(req.body)
+    const direction = req.body?.direction;
+    const threshold = req.body?.threshold || 4;
 
     let filter = {};
 
-    // If current reel exists, fetch its details first
+    // If current reel exists, fetch based on createdAt
     if (current) {
       const currentReel = await FoodModel.findById(current).select("createdAt");
 
@@ -126,25 +126,43 @@ const GetReels = async (req, res) => {
       } else if (direction === "prev") {
         // fetch NEWER reels
         filter = { createdAt: { $gt: currentReel.createdAt } };
+      } else {
+        return res.status(400).json({ message: "Invalid direction" });
       }
     }
 
-    // Main fetch logic
-    let reels = await FoodModel
-      .find(filter)
-      .sort({ createdAt: -1 }) // always newest → oldest
+    // Fetch reels
+    let reels = await FoodModel.find(filter)
+      .sort({ createdAt: -1 })
       .limit(threshold);
 
-    // Extra safety: sort again in JS (just to guarantee perfect order)
+    // Ensure consistent sort
     reels = reels.sort((a, b) => b.createdAt - a.createdAt);
 
-    return res.json(reels);
+    // Add hasLiked
+    const finalReels = reels.map((reel) => {
+      const hasLiked = userId
+        ? reel.likes?.some((id) => id.toString() === userId.toString())
+        : false;
+
+      return {
+        ...reel._doc,
+        hasLiked,
+        like:reel.likes?.length || 0
+      };
+    });
+
+    return res.json({
+      success: true,
+      reels: finalReels,
+    });
 
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
