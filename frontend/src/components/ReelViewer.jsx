@@ -23,28 +23,49 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
     const looksLikeVideo = /\.(mp4|webm|ogg)(\?|$)/i.test(src) || /mp4|webm|ogg/i.test(src);
 
     if (isActive && looksLikeVideo) {
-      const p = v.play();
-      if (p && p.catch) p.catch((err) => {
-        // don't throw — log and continue
-        console.warn("Video play prevented:", err);
-      });
+      // ensure muted so autoplay is permitted by browsers
+      try {
+        v.muted = true;
+        v.volume = 0;
+      } catch {
+        // ignore
+      }
+
+      const tryPlay = async () => {
+        try {
+          console.log(v)
+          const p = v.play();
+          if (p && p.catch) {
+            await p;
+          }
+        } catch {
+          // if play is blocked, try again once the element can play
+          const onCan = () => {
+            v.play().catch(() => {});
+            v.removeEventListener("canplay", onCan);
+          };
+          v.addEventListener("canplay", onCan);
+        }
+      };
+
+      tryPlay();
     } else {
       try {
         v.pause();
         v.currentTime = 0;
-      } catch (err) {
+      } catch {
         // ignore
       }
     }
   }, [isActive]);
 
   // Call onReelScroll prop when active state changes
+  const stableReelId = reel?.id ?? String(reel?.title ?? "unknown");
   useEffect(() => {
     if (onReelScroll) {
-      // ensure we pass a stable string id to avoid numeric coercion issues
-      onReelScroll(isActive, reel?.id ?? String(reel?.title ?? "unknown"));
+      onReelScroll(isActive, stableReelId);
     }
-  }, [isActive, reel?.id, onReelScroll]);
+  }, [isActive, stableReelId, onReelScroll]);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -109,7 +130,7 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Visit {reel.cuisine}{" "}
+                    Visit {" "}
                     <BsArrowUpRight size={15} fontWeight={700} />
                   </span>
                 </div>

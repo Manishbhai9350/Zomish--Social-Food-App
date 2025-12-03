@@ -19,13 +19,15 @@ const Model = Schema({
         type:mongoose.Schema.Types.ObjectId,
         required:true,
     },
-    likes:{
+    likes:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:'users'
-    }
+    }]
+}, {
+    timestamps: true
 })
 
 
-const FoodModel = new model('food',Model)
+const FoodModel =  model('food',Model)
 
 export {FoodModel}

@@ -49,6 +49,6 @@ const Model = Schema({
 })
 
 
-const FoodPartnerModel = new model('foodpartner',Model)
+const FoodPartnerModel =  model('foodpartner',Model)
 
 export {FoodPartnerModel}
