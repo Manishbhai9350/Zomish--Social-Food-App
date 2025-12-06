@@ -12,7 +12,7 @@ body,
 #root {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: var(--font-sans);
   background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
 }
@@ -297,7 +297,7 @@ button {
 }
 
 .reel-viewer {
-  width: min(450px, 100%);
+  width: auto;
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -325,7 +325,9 @@ button {
 }
 
 .reel-media {
-  width: 100%;
+  width: 100vw;
+  height: 100vh;
+  background: red;
   flex: 1;
   position: relative;
 }
@@ -533,6 +535,46 @@ button {
   white-space: nowrap;
 }
 
+/* User Info Card  */
+
+.user-info-card {
+  width: 100%;
+  height: auto;
+  padding: 20px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid rgb(143, 143, 143);
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 30px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.user-info {
+  .fullname {
+    font-size: 1.7rem;
+    font-weight: 600;
+  }
+  .email {
+    font-size: .9rem;
+    color: #333;
+  }
+}
+
+
 /* Partner Info Card */
 .partner-info-card {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.85));
@@ -659,7 +701,7 @@ button {
 }
 
 .reel-card {
-  border-radius: 16px;
+  border-radius: 4px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
@@ -729,8 +771,7 @@ button {
 }
 
 .reel-card-info {
-  padding: 12px;
-  background: white;
+  padding: 4px;
 }
 
 .reel-card-title {

@@ -87,6 +87,7 @@ const likeFood = async (req, res) => {
         success: true,
         message: "Unliked successfully",
         liked: false,
+        reel:foodReel
       });
     }
 
@@ -99,6 +100,7 @@ const likeFood = async (req, res) => {
       success: true,
       message: "Liked successfully",
       liked: true,
+      reel:foodReel
     });
   } catch (err) {
     console.error(err);
@@ -149,6 +151,7 @@ const saveFood = async (req, res) => {
         success: true,
         message: "Unsaved successfully",
         saved: false,
+        reel:foodReel
       });
     }
 
@@ -160,6 +163,7 @@ const saveFood = async (req, res) => {
       success: true,
       message: "Saved successfully",
       saved: true,
+      reel:foodReel
     });
   } catch (err) {
     console.error(err);

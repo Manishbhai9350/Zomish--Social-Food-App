@@ -4,13 +4,15 @@ import { BsFillSaveFill, BsSave, BsArrowUpRight } from "react-icons/bs";
 import { Link, useNavigate } from "react-router-dom";
 import { Axioss } from "../utils/axios";
 
-const ReelViewer = ({ reel, isOpen }) => {
+const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId='') => {} }) => {
   const [likes, setLikes] = useState(reel.likes?.length || 0);
   const [isLiked, setIsLiked] = useState(reel.hasLiked || false);
   const [isSaved, setIsSaved] = useState(reel.hasSaved || false);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
+  const progressRef = useRef(null);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,134 +33,154 @@ const ReelViewer = ({ reel, isOpen }) => {
     };
   }, [isOpen]);
 
-  const handleLike = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const res = await Axioss.patch(
-        "/api/food/like",
-        { reel: reel._id },
-        { withCredentials: true }
-      );
-      if (res.data?.authorize) {
-        navigate("/auth/user/login");
-      }
-      setLikes(res.data.liked ? likes + 1 : likes - 1);
-      setIsLiked(res.data.liked);
-    } catch {}
-    finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (loading) return;
-    setLoading(true);
-    try {
-      const res = await Axioss.patch(
-        "/api/food/save",
-        { reel: reel._id },
-        { withCredentials: true }
-      );
-      if (res.data?.authorize) {
-        navigate("/auth/user/login");
-      }
-      setIsSaved(res.data.saved);
-    } catch {}
-    finally {
-      setLoading(false);
-    }
-  };
 
   const fullDescription = reel.description || "";
   const maxLength = 100;
   const isLong = fullDescription.length > maxLength;
-  const displayText = expanded ? fullDescription : fullDescription.slice(0, maxLength);
+  const displayText = expanded
+    ? fullDescription
+    : fullDescription.slice(0, maxLength);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="reel-viewer-modal"
-      style={{
-        width: "100%",
-        background: "#111",
-        borderRadius: "12px",
-        padding: "16px",
-        color: "white",
-      }}
-    >
-      {/* Video */}
-      <div className="reel-video" style={{ width: "100%", borderRadius: "8px", overflow: "hidden" }}>
+    <div style={{aspectRatio:16/9,height:'100vh'}} className="reel-viewer">
+      {/* ---------- VIDEO ---------- */}
+      <div className="reel-media">
         <video
           ref={videoRef}
-          src={reel.video}
-          style={{ width: "100%", objectFit: "cover" }}
-          loop
+          style={{ height: "100%", width: "100%", objectFit: "cover" }}
           muted
+          loop
           playsInline
-          controls
+          preload="metadata"
+          aria-label={reel.title}
+          src={
+            /\.(mp4|webm|ogg)(\?|$)/i.test(reel?.video || "") ||
+            /mp4|webm|ogg/i.test(reel?.video || "")
+              ? reel.video
+              : undefined
+          }
         />
       </div>
 
-      {/* Title & Partner */}
-      <div style={{ marginTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2 style={{ margin: 0, fontSize: "18px" }}>{reel.title}</h2>
-        <Link to={`/food-partner/${reel.partner}`}>
-          <span
+      {/* DARK OVERLAY */}
+      <div className="reel-overlay"></div>
+
+      {/* ---------- CONTENT ---------- */}
+      <div className="reel-content">
+        <div className="reel-info">
+          <div
             style={{
               display: "flex",
-              alignItems: "center",
-              background: "rgba(53, 171, 255, 0.85)",
-              padding: "4px 10px",
-              borderRadius: "8px",
-              fontSize: "13px",
-              fontWeight: "600",
+              paddingRight: 5,
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              minHeight: 100,
+              width: "100%",
+              marginBottom: 20,
             }}
+            className="info-header"
           >
-            Visit <BsArrowUpRight size={14} style={{ marginLeft: "4px" }} />
-          </span>
-        </Link>
+            {/* TITLE + VISIT BUTTON */}
+            <div className="info-header-titles">
+              <h1 className="reel-title">{reel.title}</h1>
+
+              <Link to={`/food-partner/${reel.partner}`}>
+                <div style={{ marginTop: 10 }}>
+                  <span
+                    style={{
+                      background: "rgba(53, 171, 255, 0.85)",
+                      padding: "6px 16px",
+                      borderRadius: "12px",
+                      fontSize: "15px",
+                      fontWeight: "600",
+                      letterSpacing: "0.5px",
+                      textTransform: "uppercase",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Visit <BsArrowUpRight size={15} />
+                  </span>
+                </div>
+              </Link>
+            </div>
+
+            {/* LIKE + SAVE BUTTONS */}
+            <div className="content-buttons">
+              <button
+                className={`reel-like-btn ${isLiked ? "liked" : ""}`}
+                onClick={() => onLike(reel._id)}
+                title="Like"
+              >
+                <div className="reel-like-icon">
+                  {isLiked ? (
+                    <AiFillHeart size={28} />
+                  ) : (
+                    <AiOutlineHeart size={28} />
+                  )}
+                </div>
+                <span className="like-count">
+                  {likes > 999 ? `${(likes / 1000).toFixed(1)}k` : likes}
+                </span>
+              </button>
+
+              <button
+                className={`reel-save-btn ${isSaved ? "saved" : ""}`}
+                onClick={() => onSave(reel._id)}
+                title="Save"
+              >
+                <div className="reel-like-icon">
+                  {isSaved ? (
+                    <BsFillSaveFill size={28} />
+                  ) : (
+                    <BsSave size={28} />
+                  )}
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* ---------- DESCRIPTION ---------- */}
+          <div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "13px",
+                lineHeight: "1.4",
+                color: "rgba(255, 255, 255, 0.85)",
+                letterSpacing: "0.2px",
+              }}
+            >
+              {displayText}
+              {isLong && !expanded && "..."}
+            </p>
+
+            {isLong && (
+              <button
+                onClick={() => setExpanded(!expanded)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255, 255, 255, 0.9)",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  padding: "4px 0",
+                  marginTop: "6px",
+                  textDecoration: "underline",
+                }}
+              >
+                {expanded ? "See Less" : "See More"}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Like & Save Buttons */}
-      <div style={{ marginTop: "10px", display: "flex", gap: "16px" }}>
-        <button
-          onClick={handleLike}
-          style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "white", cursor: "pointer" }}
-        >
-          {isLiked ? <AiFillHeart size={24} color="red" /> : <AiOutlineHeart size={24} />}
-          <span>{likes > 999 ? `${(likes / 1000).toFixed(1)}k` : likes}</span>
-        </button>
-
-        <button
-          onClick={handleSave}
-          style={{ display: "flex", alignItems: "center", gap: "6px", background: "none", border: "none", color: "white", cursor: "pointer" }}
-        >
-          {isSaved ? <BsFillSaveFill size={24} /> : <BsSave size={24} />}
-        </button>
-      </div>
-
-      {/* Description */}
-      <div style={{ marginTop: "12px", fontSize: "14px", lineHeight: "1.4" }}>
-        <p style={{ margin: 0 }}>{displayText}{isLong && !expanded && "..."}</p>
-        {isLong && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#fff",
-              fontSize: "12px",
-              fontWeight: "600",
-              cursor: "pointer",
-              marginTop: "4px",
-              textDecoration: "underline",
-            }}
-          >
-            {expanded ? "See Less" : "See More"}
-          </button>
-        )}
+      {/* ---------- PROGRESS BAR ---------- */}
+      <div className="progress">
+        <div ref={progressRef} className="line"></div>
       </div>
     </div>
   );
