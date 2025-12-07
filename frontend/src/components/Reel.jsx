@@ -1,19 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsFillSaveFill, BsSave, BsArrowUpRight } from "react-icons/bs";
 import { Link, useNavigate } from "react-router-dom";
 import { Axioss } from "../utils/axios";
 
 const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId='') => {} }) => {
-  const [likes, setLikes] = useState(reel.likes?.length || 0);
-  const [isLiked, setIsLiked] = useState(reel.hasLiked || false);
-  const [isSaved, setIsSaved] = useState(reel.hasSaved || false);
   const [expanded, setExpanded] = useState(false);
-  const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
   const progressRef = useRef(null);
 
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const v = videoRef.current;
@@ -25,6 +22,7 @@ const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId
       v.play().catch(() => {});
     } catch {}
 
+
     return () => {
       try {
         v.pause();
@@ -33,6 +31,7 @@ const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId
     };
   }, [isOpen]);
 
+  const likes = useMemo(() => reel.likes?.length || 0,[reel])
 
   const fullDescription = reel.description || "";
   const maxLength = 100;
@@ -86,7 +85,7 @@ const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId
             <div className="info-header-titles">
               <h1 className="reel-title">{reel.title}</h1>
 
-              <Link to={`/food-partner/${reel.partner}`}>
+              {/* <Link to={`/food-partner/${reel.partner}`}>
                 <div style={{ marginTop: 10 }}>
                   <span
                     style={{
@@ -103,35 +102,35 @@ const ReelViewer = ({ reel, isOpen, onLike = (reelId='') => {}, onSave = (reelId
                     Visit <BsArrowUpRight size={15} />
                   </span>
                 </div>
-              </Link>
+              </Link> */}
             </div>
 
             {/* LIKE + SAVE BUTTONS */}
             <div className="content-buttons">
               <button
-                className={`reel-like-btn ${isLiked ? "liked" : ""}`}
+                className={`reel-like-btn ${reel.isLiked ? "liked" : ""}`}
                 onClick={() => onLike(reel._id)}
                 title="Like"
               >
                 <div className="reel-like-icon">
-                  {isLiked ? (
+                  {reel.hasLiked ? (
                     <AiFillHeart size={28} />
                   ) : (
                     <AiOutlineHeart size={28} />
                   )}
                 </div>
                 <span className="like-count">
-                  {likes > 999 ? `${(likes / 1000).toFixed(1)}k` : likes}
+                  {likes  > 999 ? `${(likes / 1000).toFixed(1)}k` : likes}
                 </span>
               </button>
 
               <button
-                className={`reel-save-btn ${isSaved ? "saved" : ""}`}
+                className={`reel-save-btn ${reel.hasSaved ? "saved" : ""}`}
                 onClick={() => onSave(reel._id)}
                 title="Save"
               >
                 <div className="reel-like-icon">
-                  {isSaved ? (
+                  {reel.hasSaved ? (
                     <BsFillSaveFill size={28} />
                   ) : (
                     <BsSave size={28} />

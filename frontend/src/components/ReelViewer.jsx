@@ -144,9 +144,7 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
 
 
   // prefer backend description when available
-  const fullDescription = reel?.description
-    ? reel.description
-    : `${reel.title} is an amazing dish prepared with fresh, premium ingredients. Savor the perfect blend of spices and flavors. Order now and get 20% off on your first order! 🎉`;
+  const fullDescription = reel?.description 
   const maxLength = 60;
   const isLong = fullDescription.length > maxLength;
   const displayText = expanded
@@ -155,14 +153,13 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
 
   return (
     <div className="reel-viewer">
-      <div className="reel-media">
+      <div style={{position:'relative'}} className="reel-media">
         {/* only set src when it looks like a playable video to avoid media errors */}
         <video
           ref={videoRef}
           style={{ height: "100%", width: "100%", objectFit: "cover" }}
           muted
           loop
-          playsInline
           preload="metadata"
           src={/\.(mp4|webm|ogg)(\?|$)/i.test(reel?.url || "") || /mp4|webm|ogg/i.test(reel?.url || "") ? reel.url : undefined}
           aria-label={reel.title}
@@ -188,7 +185,7 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
           >
             <div className="info-header-titles">
               <h1 className="reel-title">{reel.title}</h1>
-              <Link to={`/food-partner/${reel.partner}`}>
+              {/* <Link to={`/food-partner/${reel.partner}`}>
                 <div style={{ marginTop: 10 }}>
                   <span
                     style={{
@@ -206,7 +203,7 @@ const ReelViewer = ({ reel, isActive = false, onReelScroll }) => {
                     <BsArrowUpRight size={15} fontWeight={700} />
                   </span>
                 </div>
-              </Link>
+              </Link> */}
             </div>
             <div  className="content-buttons">
               <button

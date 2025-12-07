@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsBookmark, BsBookmarkFill } from "react-icons/bs";
 import { IoArrowBack } from "react-icons/io5";
@@ -32,87 +32,97 @@ const UserProfile = () => {
     GetData();
   }, []);
 
-  const reelsToShow = activeTab === "liked" ? likedReels : savedReels;
 
-async function ToggleReelLike(reelId = "") {
-  if (!reelId) return;
+  async function ToggleReelLike(reelId = "") {
+    if (!reelId) return;
 
-  const res = await Axioss.patch(
-    "/api/food/like",
-    { reel: reelId },
-    { withCredentials: true }
-  ).catch(() => {});
+    const res = await Axioss.patch(
+      "/api/food/like",
+      { reel: reelId },
+      { withCredentials: true }
+    ).catch(() => {});
 
-  if (!res) return;
+    if (!res) return;
 
-  const { liked, reel } = res.data;
+    const { liked, reel } = res.data;
 
-  // --- Update likedReels ---
-  setLikedReels((prev) => {
-    const exists = prev.some((r) => r._id === reelId);
+    // --- Update likedReels ---
+    setLikedReels((prev) => {
 
-    if (liked) {
-      if (!exists) {
-        return [{ ...reel, hasLiked: true, likes:reel.likes.length }, ...prev];
+      const exists = prev.some((r) => r._id === reelId);
+
+      if (liked) {
+        if (!exists) {
+          return [
+            { ...reel,hasLiked:liked},
+            ...prev,
+          ];
+        } else {
+          return prev.map((r) =>
+            r._id === reelId
+              ? { ...r,hasLiked:liked }
+              : r
+          );
+        }
       } else {
-        return prev.map((r) =>
-          r._id === reelId ? { ...r, hasLiked: true, likes:reel.likes.length } : r
-        );
+        // UNLIKE → remove from liked list
+        return prev.filter((r) => r._id !== reelId);
       }
-    } else {
-      // UNLIKE → remove from liked list
-      return prev.filter((r) => r._id !== reelId);
-    }
-  });
+    });
 
-  // --- Sync savedReels.hasLiked & savedReels.likes ---
-  setSavedReels((prev) =>
-    prev.map((r) =>
-      r._id === reelId ? { ...r, hasLiked: liked, likes:reel.likes.length } : r
-    )
-  );
-}
+    // --- Sync savedReels.hasLiked & savedReels.likes ---
+    setSavedReels((prev) =>
+      prev.map((r) => {
+        return r._id == reel._id
+          ? { ...r, hasLiked:liked, likes:reel.likes }
+          : r;
+      })
+    );
+  }
 
+  async function ToggleReelSave(reelId = "") {
+    if (!reelId) return;
 
- async function ToggleReelSave(reelId = "") {
-  if (!reelId) return;
+    const res = await Axioss.patch(
+      "/api/food/save",
+      { reel: reelId },
+      { withCredentials: true }
+    ).catch(() => {});
 
-  const res = await Axioss.patch(
-    "/api/food/save",
-    { reel: reelId },
-    { withCredentials: true }
-  ).catch(() => {});
+    if (!res) return;
 
-  if (!res) return;
+    const { saved, reel, liked } = res.data;
 
-  const { saved, reel } = res.data;
+    // --- Update savedReels ---
+    setSavedReels((prev) => {
+      const exists = prev.some((r) => r._id === reelId);
 
-  // --- Update savedReels ---
-  setSavedReels((prev) => {
-    const exists = prev.some((r) => r._id === reelId);
-
-    if (saved) {
-      // SAVE
-      if (!exists) {
-        return [{ ...reel, hasSaved: true }, ...prev];
+      if (saved) {
+        // SAVE
+        if (!exists) {
+          return [{ ...reel, hasSaved: true, hasLiked:liked }, ...prev];
+        } else {
+          return prev.map((r) =>
+            r._id === reelId ? { ...r, hasSaved: true, hasLiked:liked } : r
+          );
+        }
       } else {
-        return prev.map((r) =>
-          r._id === reelId ? { ...r, hasSaved: true } : r
-        );
+        // UNSAVE → remove from saved list
+        return prev.filter((r) => r._id !== reelId);
       }
-    } else {
-      // UNSAVE → remove from saved list
-      return prev.filter((r) => r._id !== reelId);
-    }
-  });
+    });
 
-  // --- Sync likedReels.hasSaved ---
-  setLikedReels((prev) =>
-    prev.map((r) =>
-      r._id === reelId ? { ...r, hasSaved: saved,likes:reel.likes.length } : r
-    )
-  );
-}
+    // --- Sync likedReels.hasSaved ---
+    setLikedReels((prev) =>
+      prev.map((r) =>
+        r._id === reelId
+          ? { ...r, hasSaved: saved, likes: reel.likes }
+          : r
+      )
+    );
+  }
+
+  const reelsToShow = useMemo(() => activeTab == 'liked' ? likedReels : savedReels, [likedReels,savedReels,activeTab])
 
 
   return (
@@ -220,8 +230,8 @@ async function ToggleReelLike(reelId = "") {
           <div
             style={{
               width: "100%",
-              maxWidth: "600px",
-              maxHeight: "90vh",
+              maxWidth: "400px",
+              maxHeight: "100vh",
               position: "relative",
             }}
           >

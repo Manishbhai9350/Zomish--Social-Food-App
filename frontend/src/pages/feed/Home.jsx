@@ -397,11 +397,10 @@ const Home = () => {
                 willChange: "transform",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                padding: "0 16px",
+                justifyContent: "center"
               }}
             >
-              <div style={{ width: "min(480px, 100%)", height: "100%" }}>
+              <div style={{ width: "min(480px, 100%)", height: "100vh" }}>
                 <ReelViewer
                   reel={item}
                   isActive={item.globalIndex === currentIndex}

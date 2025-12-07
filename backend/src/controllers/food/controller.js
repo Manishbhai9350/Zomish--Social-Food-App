@@ -87,7 +87,7 @@ const likeFood = async (req, res) => {
         success: true,
         message: "Unliked successfully",
         liked: false,
-        reel:foodReel
+        reel: foodReel,
       });
     }
 
@@ -100,7 +100,7 @@ const likeFood = async (req, res) => {
       success: true,
       message: "Liked successfully",
       liked: true,
-      reel:foodReel
+      reel: foodReel,
     });
   } catch (err) {
     console.error(err);
@@ -143,6 +143,8 @@ const saveFood = async (req, res) => {
       (id) => id.toString() === foodReel._id.toString()
     );
 
+    const hasLiked = foodReel.likes?.indexOf(user._id) >= 0;
+
     // FIX 2: Toggle logic properly
     if (alreadySaved) {
       user.saved.pull(foodReel._id);
@@ -151,7 +153,8 @@ const saveFood = async (req, res) => {
         success: true,
         message: "Unsaved successfully",
         saved: false,
-        reel:foodReel
+        liked: hasLiked,
+        reel: foodReel,
       });
     }
 
@@ -163,7 +166,9 @@ const saveFood = async (req, res) => {
       success: true,
       message: "Saved successfully",
       saved: true,
-      reel:foodReel
+      liked: hasLiked,
+
+      reel: foodReel,
     });
   } catch (err) {
     console.error(err);
